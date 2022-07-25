@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link
+			rel="stylesheet"
+			type="text/css"
+			href="https://cdn.tailwindcss.com/3.0.12"
+		/>
+		<script
+			src="https://kit.fontawesome.com/777427548f.js"
+			crossorigin="anonymous"
+		></script>
+		<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://cdn.tailwindcss.com"></script>
+
+		<style>
+			.strike_none {
+				text-decoration: none;
+			}
+			.green {
+				background-color: green !important;
+			}
+		</style>
+		<title>{{todo_list.name}} Todo-List</title>
+	</head>
+	<body>
+		<div class="flex justify-center items-center p-4 min-h-screen bg-[#cbd7e3]">
+			<div
+				class="h-auto w-96 bg-white rounded-lg py-4 overflow-hidden flex flex-col"
+			>
+				<div class="mx-4 mb-5">
+					<a href="/" class="flex gap-2 items-center">
+						<i class="text-[#8ea6c8] fa fa-chevron-left"></i>
+						<span class="text-[#8ea6c8] text-xs">Back</span>
+					</a>
+				</div>
+
+				{%if todo_list%}
+				<div
+					class="mt-3 text-sm text-[#8ea6c8] flex justify-between items-center px-4"
+				>
+					<p class="set_date">Thursday 28 May</p>
+					<p class="set_time">8:00 AM</p>
+				</div>
+
+				<div class="px-4 mt-2 text-[#063c76] flex items-center justify-between">
+					<p class="text-xl font-semibold">{{todo_list.name}}</p>
+
+					<span
+						id="check-all"
+						class="text-sm underline decoration-solid cursor-pointer"
+						onclick="checkAll('{{todo_list.id}}')"
+						>Check all</span
+					>
+				</div>
+
+				<form
+					id="todo-form"
+					data-list-id="{{todo_list.id}}"
+					class="px-4 mt-4 flex items-center gap-2"
+				>
+					<input
+						type="text"
+						id="todo-input"
+						name="description"
+						class="flex-1 h-12 bg-[#e0ebff] rounded-[7px] flex px-3 text-[#5b7a9d] text-sm"
+						placeholder="Add todo"
+					/>
+					<button
+						type="submit"
+						class="bg-green-500 rounded px-4 py-2 h-12 text-white text-sm"
+					>
+						Add <i class="text-white fa fa-add"></i>
+					</button>
+				</form>
+
+				<p
+					class="p-3 mx-4 mt-4 bg-red-100 rounded hidden text-red-500 text-xs"
+					id="error-message"
+				></p>
+
+				<div class="flex-1 flex items-center justify-center">
+					<ul
+						class="my-4 w-full h-full max-h-[45vh] overflow-y-auto px-4"
+						id="todo-list"
+					>
+						{%for item in data%}
+						<li class="mt-4 w-full" id="{{item.id}}">
+							<div class="flex gap-2">
+								<div
+									class="w-full min-h-12 bg-[#e0ebff] rounded-[7px] flex justify-start items-center p-3"
+								>
+									<span
+										id="check{{item.id}}"
+										class="{{'green' if item.completed else '' }} w-7 h-7 bg-white rounded-full border border-white transition-all cursor-pointer hover:border-[#36d344] flex justify-center items-center"
+										onclick="toggleChecked('{{item.id}}')"
+										data-checked="{{'true' if item.completed else 'false'}}"
+										><i class="text-white fa fa-check"></i
+									></span>
+									<strike
+										id="strike{{item.id}}"
+										class="{{'' if item.completed else 'strike_none' }} flex-1 text-sm ml-4 text-[#5b7a9d] font-semibold"
+										>{{item.description}}</strike
+									>
+									<span
+										onclick="deleteItem('{{item.id}}')"
+										class="cursor-pointer"
+										><i class="text-red-500 fa fa-trash"></i
+									></span>
+								</div>
+							</div>
+						</li>
+						{%endfor%}
+					</ul>
+				</div>
+				{%else%}
+				<div class="flex items-center justify-center my-10 px-4">
+					<p class="text-[#8ea6c8] font-bold text-center">
+						This todo-list does not exist!
+					</p>
+				</div>
+				{%endif%}
+			</div>
+		</div>
+	</body>
+	<script>
+		const setdate = document.querySelector(".set_date");
+		const settime = document.querySelector(".set_time");
+
+		const date = new Date().toDateString();
+		setdate.innerHTML = date;
+
+		const createListItem = response => {
+			const listItem = document.createElement("li");
+			listItem.classList.add("mt-4");
+			listItem.classList.add("w-full");
+			listItem.id = response.id;
+			listItem.innerHTML = `
+				<div class="flex gap-2">
+					<div
+						class="w-full min-h-12 bg-[#e0ebff] rounded-[7px] flex justify-start items-center p-3"
+					>
+						<span
+							id="check${response.id}"
+							class="w-7 h-7 bg-white rounded-full border border-white transition-all cursor-pointer hover:border-[#36d344] flex justify-center items-center"
+							onclick="toggleChecked('${response.id}')"
+							data-checked="false"
+							><i class="text-white fa fa-check"></i
+						></span>
+						<strike
+							id="strike${response.id}"
+							class="strike_none flex-1 text-sm ml-4 text-[#5b7a9d] font-semibold"
+							>${response?.description}</strike
+						>
+						<span onclick="deleteItem('${response.id}')" class="cursor-pointer"
+							><i class="text-red-500 fa fa-trash"></i
+						></span>
+					</div>
+				</div>
+		`;
+
+			return listItem;
+		};
+
+		setInterval(() => {
+			const time = new Date().toLocaleTimeString();
+			settime.innerHTML = time;
+		}, 500);
+
+		const toggleChecked = id => {
+			const errorMessage = document.getElementById("error-message");
+			const checked = JSON.parse(
+				document.getElementById(`check${id}`).dataset.checked
+			);
+
+			fetch(`/todo/${id}/update`, {
+				method: "PATCH",
+				body: JSON.stringify({
+					completed: !checked
+				}),
+				headers: {
+					"Content-Type": "application/json"
+				}
+			})
+				.then(() => {
+					errorMessage.classList.add("hidden");
+					const checkbox = document.getElementById(`check${id}`);
+					checkbox.classList.toggle("green");
+					const todoText = document.getElementById(`strike${id}`);
+					todoText.classList.toggle("strike_none");
+				})
+				.catch(error => {
+					error.innerHTML = "Something went wrong, try again later.";
+					errorMessage.classList.remove("hidden");
+					console.log(error);
+				});
+		};
+
+		const deleteItem = id => {
+			const errorMessage = document.getElementById("error-message");
+
+			fetch(`/todo/${id}/delete`, {
+				method: "DELETE"
+			})
+				.then(response => response.json())
+				.then(() => {
+					errorMessage.classList.add("hidden");
+					const item = document.getElementById(id);
+					item.remove();
+				})
+				.catch(error => {
+					error.innerHTML = "Something went wrong, try again later.";
+					errorMessage.classList.remove("hidden");
+					console.log(error);
+				});
+		};
+
+		const checkAll = todoListId => {
+			const errorMessage = document.getElementById("error-message");
+
+			fetch(`/todo_list/${todoListId}/update`, {
+				method: "POST"
+			})
+				.then(() => {})
+				.then(() => {
+					const checkAll = document.getElementById("check-all");
+					checkAll.remove();
+					errorMessage.classList.add("hidden");
+				})
+				.catch(error => {
+					error.innerHTML = "Something went wrong, try again later.";
+					errorMessage.classList.remove("hidden");
+					console.log(error);
+				});
+		};
+
+		document.getElementById("todo-form").onsubmit = event => {
+			event.preventDefault();
+			const newTodo = document.getElementById("todo-input").value;
+			const errorMessage = document.getElementById("error-message");
+			const todoListId = event.target.dataset.listId;
+
+			if (newTodo.trim() !== "") {
+				fetch(`/todo-list/${todoListId}/todo/create`, {
+					method: "POST",
+					body: JSON.stringify({
+						description: newTodo
+					}),
+					headers: {
+						"Content-Type": "application/json"
+					}
+				})
+					.then(response => {
+						return response.json();
+					})
+					.then(response => {
+						document.getElementById("todo-input").value = "";
+						errorMessage.classList.add("hidden");
+						const todoList = document.getElementById("todo-list");
+						todoList.prepend(createListItem(response));
+					})
+					.catch(error => {
+						error.innerHTML = "Something went wrong, try again later.";
+						errorMessage.classList.remove("hidden");
+						console.log(error);
+					});
+			} else {
+				errorMessage.innerHTML = "You cannot add an empty todo!";
+				errorMessage.classList.remove("hidden");
+			}
+		};
+	</script>
+</html>
